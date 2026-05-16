@@ -1,13 +1,13 @@
 ---
 name: youtube-summarizer
-description: "Prepare and summarize one YouTube video with transcript fallback, metadata, comments, visual frame analysis, and optional Hancom company-context interpretation. Use when the user provides a YouTube URL and asks to summarize, analyze, extract insights, create Korean notes, inspect visual content, or connect the video to Hancom projects, RAG, agents, document AI, evaluation, or enterprise AI."
+description: "Prepare and summarize one YouTube URL or local video file with transcript fallback, metadata, comments when available, visual frame analysis, and optional Hancom company-context interpretation. Use when the user provides a YouTube link or video file path and asks to summarize, analyze, extract insights, create Korean notes, inspect visual content, or connect the video to Hancom projects, RAG, agents, document AI, evaluation, or enterprise AI."
 ---
 
 # YouTube Summarizer
 
 ## Overview
 
-Use this skill to turn one YouTube URL into a Korean Markdown summary that combines metadata, comments, transcript/STT, representative frames, and optional Hancom context.
+Use this skill to turn one YouTube URL or local video file into a Korean Markdown summary that combines metadata, transcript/STT, representative frames, comments when available, and optional Hancom context.
 
 Keep heavy data on disk. Read `manifest.json` first, then open only the transcript excerpts and frame images needed for the summary.
 
@@ -20,10 +20,10 @@ bash scripts/install_deps.sh
 uv run scripts/prepare.py "YOUTUBE_URL"
 ```
 
-For private/internal videos, force local STT:
+For a local video file:
 
 ```bash
-uv run --with faster-whisper scripts/prepare.py "YOUTUBE_URL" --local --force-stt
+uv run scripts/prepare.py "/path/to/video.mp4" --language ko
 ```
 
 If an `.env` file is used locally:
@@ -32,11 +32,11 @@ If an `.env` file is used locally:
 uv run --env-file .env scripts/prepare.py "YOUTUBE_URL"
 ```
 
-`prepare.py` prints the final `downloads/<title>/manifest.json` path.
+`prepare.py` prints the final `downloads/<title-or-filename>/manifest.json` path.
 
 ## Inputs
 
-- `url`: one YouTube URL.
+- `source`: one YouTube URL or local video file path.
 - `--languages ko,en`: preferred subtitle languages.
 - `--local`: use local `faster-whisper` instead of ElevenLabs.
 - `--force-stt`: ignore downloaded subtitles and run STT.
@@ -49,8 +49,8 @@ Use `ELEVENLABS_API_KEY` from the environment for public-video STT. Never write 
 ## Workflow
 
 1. **Prepare assets**
-   - Run `scripts/prepare.py` with the URL.
-   - Use `--local` for private or internal content.
+   - Run `scripts/prepare.py` with the YouTube URL or local file path.
+   - Local files use `ffprobe` metadata, `ffmpeg` audio extraction, STT, and scene detection.
    - Wait for `manifest.json`.
 
 2. **Read receipts first**
@@ -61,7 +61,7 @@ Use `ELEVENLABS_API_KEY` from the environment for public-video STT. Never write 
 3. **Check relevance**
    - Read `prompts/relevance_check.md`.
    - Read only the concise `context/*.md` files needed for the topic.
-   - Use title, description, comments, and the first transcript excerpt to produce:
+   - Use title, description or local file metadata, comments when available, and the first transcript excerpt to produce:
 
 ```json
 {
@@ -91,7 +91,8 @@ Mode thresholds:
    - Use `prompts/generic_summary.md` for `generic`.
    - Use `prompts/contextual_summary.md` for `hybrid` or `contextual`.
    - Write Korean Markdown with YAML frontmatter.
-   - Include clickable timestamps using `URL&t=<seconds>s`.
+   - Include clickable timestamps using `URL&t=<seconds>s` for YouTube sources.
+   - Use plain timestamps for local file sources.
    - Add comment insights when comments are available.
    - Save to the user-requested output directory or the work folder as `summary.md`.
 
@@ -99,7 +100,7 @@ Mode thresholds:
 
 The final Markdown summary must include:
 
-- YAML frontmatter with title, channel, URL, upload date, duration, views, likes, tags, summary mode, matched topics, captured frame count, and generation time.
+- YAML frontmatter with source type, title, URL or source path, duration, summary mode, matched topics, captured frame count, and generation time. Include channel, upload date, views, likes, and tags only when available.
 - `## 핵심 요약`
 - `## 챕터별 상세 (with 비주얼)`
 - `## 한컴 적용 포인트` only for `hybrid` or `contextual`
@@ -111,11 +112,13 @@ The final Markdown summary must include:
 - If `ELEVENLABS_API_KEY` is missing for API STT, ask the user to set it or rerun with `--local`.
 - If scene detection fails, use uniform sampling from `scene_detect.py`.
 - If comments are unavailable, keep the section and state that no useful comments were retrieved.
+- If the source is a local file, do not invent YouTube-only metadata such as channel, views, likes, or comments.
 - If a video is roughly 3 hours or longer and final synthesis becomes too large, summarize by YouTube chapter boundaries with small overlaps and carry forward one-line chapter context.
 
 ## Bundled Resources
 
 - `scripts/download.py`: yt-dlp metadata, comments, subtitles, low-resolution video, and audio extraction.
+- `scripts/local_video.py`: ffprobe metadata and ffmpeg audio extraction for local files.
 - `scripts/transcribe.py`: subtitle selection plus ElevenLabs Scribe v2 or local faster-whisper fallback.
 - `scripts/scene_detect.py`: PySceneDetect, ffmpeg frame extraction, transcript weighting, and imagehash dedupe.
 - `scripts/prepare.py`: end-to-end deterministic preparation and manifest generation.

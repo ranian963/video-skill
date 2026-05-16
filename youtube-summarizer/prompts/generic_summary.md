@@ -7,8 +7,10 @@ Required output:
 ```markdown
 ---
 title: <video title>
+source_type: youtube | local_file
 channel: <channel>
 url: <url>
+source_path: <local file path>
 upload_date: <upload date>
 duration: <duration>
 views: <views>
@@ -32,6 +34,7 @@ generated_at: <ISO timestamp>
 
 Rules:
 - Summarize in Korean even when the video is in another language.
+- Include YouTube-only fields only when available. For local files, use `source_path` and omit channel/views/likes if missing.
 - Use visual frame analysis when frames contain slides, UI, products, code, diagrams, or on-screen text.
 - Do not paste the full transcript.
 - Distinguish what is visible on screen from what is said in the transcript.
