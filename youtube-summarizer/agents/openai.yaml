@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Summarizer"
+  short_description: "YouTube visual and context summaries"
+  default_prompt: "Use $youtube-summarizer to summarize this YouTube URL with transcript, visual frames, comments, and relevant company context."
