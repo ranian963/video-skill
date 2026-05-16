@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+downloads/
+*.mp4
+*.m4a
+*.mp3
+*.wav
+*.webm
+*.part
+*.ytdl
+__pycache__/
+.pytest_cache/
+.ruff_cache/

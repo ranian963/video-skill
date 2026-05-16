@@ -1,0 +1,10 @@
+{
+  "name": "youtube-summarizer",
+  "description": "Prepare YouTube assets and generate Korean summaries with transcript, visual frame, comment, and Hancom context analysis",
+  "version": "0.1.0",
+  "author": {
+    "name": "SangYoon (Chester)"
+  },
+  "homepage": "https://github.com/ranian963/video-skill",
+  "license": "MIT"
+}
