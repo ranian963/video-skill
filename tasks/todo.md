@@ -1,7 +1,7 @@
 # YouTube 종합 요약 Skill 작업 계획
 
 ## 요구사항 요약
-- 유튜브 URL 1건을 입력받아 메타데이터, 댓글, 자막/STT, 씬 프레임, 회사 컨텍스트를 통합한 마크다운 요약 Skill을 만든다.
+- 유튜브 URL 또는 로컬 영상 파일 1건을 입력받아 메타데이터, 댓글(가능할 때), 자막/STT, 씬 프레임, 회사 컨텍스트를 통합한 마크다운 요약 Skill을 만든다.
 - 개발 위치는 `/Users/chester/dev/video-skill/youtube-summarizer/`로 둔다.
 - 참고 레포는 `/Users/chester/dev/video-skill/ref/` 아래에서만 읽고, `ref/`는 Git 추적에서 제외한다.
 - 실제 시크릿은 커밋하지 않고 `ELEVENLABS_API_KEY` 환경변수 또는 로컬 `.env`만 사용한다.
@@ -14,10 +14,11 @@
 - [x] Phase 4: `SKILL.md`, `agents/openai.yaml`, `.claude-plugin/plugin.json` 완성
 - [x] Phase 5: 정적 검증, 스크립트 help/문법 검증, skill validator 실행
 - [x] Phase 6: lessons 기록과 최종 상태 정리
+- [x] Phase 7: 로컬 영상 파일 입력 지원 추가
 
 ## 수정할 파일
 - `youtube-summarizer/SKILL.md`: 실행 주체가 따를 절차 매뉴얼
-- `youtube-summarizer/scripts/*.py`: 다운로드, 자막/STT, 씬 감지, 통합 prepare 스크립트
+- `youtube-summarizer/scripts/*.py`: 다운로드, 로컬 영상 준비, 자막/STT, 씬 감지, 통합 prepare 스크립트
 - `youtube-summarizer/context/*.md`: 한컴 관련 정적 컨텍스트
 - `youtube-summarizer/prompts/*.md`: relevance와 요약 프롬프트
 - `youtube-summarizer/.env.example`, `youtube-summarizer/.gitignore`: 시크릿/산출물 제외

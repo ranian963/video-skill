@@ -7,8 +7,10 @@ Required output:
 ```markdown
 ---
 title: <video title>
+source_type: youtube | local_file
 channel: <channel>
 url: <url>
+source_path: <local file path>
 upload_date: <upload date>
 duration: <duration>
 views: <views>
@@ -44,3 +46,4 @@ Evidence rules:
 - Separate fact, inference, and recommendation.
 - If a connection to Hancom is weak, say so plainly.
 - Do not invent internal project details beyond the context files.
+- Include YouTube-only fields only when available. For local files, use `source_path` and omit channel/views/likes if missing.

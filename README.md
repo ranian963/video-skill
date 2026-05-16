@@ -1,13 +1,14 @@
 # YouTube 종합 요약 Skill
 
-YouTube URL 하나를 입력하면 자막, 메타데이터, 댓글, 화면 프레임을 준비하고, Codex가 이를 바탕으로 한국어 마크다운 요약을 작성할 수 있게 해주는 Skill입니다.
+YouTube URL 또는 로컬 영상 파일 하나를 입력하면 자막/STT, 메타데이터, 댓글, 화면 프레임을 준비하고, Codex가 이를 바탕으로 한국어 마크다운 요약을 작성할 수 있게 해주는 Skill입니다.
 
 핵심 흐름은 단순합니다. 무거운 영상, 오디오, 자막, 프레임 파일은 디스크에 저장하고, Codex는 `manifest.json`을 먼저 읽은 뒤 필요한 파일만 열어 최종 요약을 작성합니다.
 
 ## 현재 지원 범위
 
-- YouTube URL 1건 처리
-- 제목, 채널, 업로드일, 길이, 조회수, 좋아요, 태그, 설명 수집
+- YouTube URL 또는 로컬 영상 파일 1건 처리
+- YouTube 영상은 제목, 채널, 업로드일, 길이, 조회수, 좋아요, 태그, 설명 수집
+- 로컬 영상은 파일명, 경로, 길이, 해상도, 코덱, 파일 크기 수집
 - 사람 자막 우선 사용, 없거나 강제 지정 시 STT fallback
 - ElevenLabs Scribe v2 Batch 기반 STT
 - 씬 변화와 자막 힌트를 이용한 대표 프레임 추출
@@ -65,6 +66,12 @@ uv run scripts/prepare.py "https://www.youtube.com/watch?v=VIDEO_ID"
 downloads/<video-title>-<video-id>/manifest.json
 ```
 
+로컬 영상 파일은 파일 경로를 그대로 넘깁니다. 로컬 영상은 YouTube 자막이 없으므로 기본적으로 ElevenLabs STT 경로를 사용합니다.
+
+```bash
+uv run scripts/prepare.py "/path/to/video.mp4" --language ko
+```
+
 ## STT 강제 사용
 
 자막 대신 ElevenLabs Scribe v2로 STT를 강제로 검증하거나 사용하려면 `--force-stt`를 붙입니다. 영상 언어에 맞춰 `--language`도 지정하는 편이 좋습니다.
@@ -118,6 +125,8 @@ downloads/<video-title>-<video-id>/
 
 `downloads/`, `.env`, 영상, 오디오, 프레임 파일은 Git에 올리지 않습니다.
 
+로컬 영상 파일은 `downloads/`로 복사하지 않습니다. `manifest.json`의 `files.video`와 `source_path`가 원본 파일 경로를 가리킵니다.
+
 ## 최종 요약 작성 흐름
 
 `prepare.py`는 최종 요약 문서까지 쓰지 않습니다. 준비가 끝나면 Codex가 다음 순서로 작업합니다.
@@ -132,8 +141,10 @@ downloads/<video-title>-<video-id>/
 ```markdown
 ---
 title: 영상 제목
+source_type: youtube | local_file
 channel: 채널명
 url: 영상 URL
+source_path: 로컬 파일 경로
 upload_date: 업로드일
 duration: 영상 길이
 views: 조회수
@@ -196,6 +207,28 @@ uv run youtube-summarizer/scripts/prepare.py \
 - transcript source: `stt:elevenlabs-scribe-v2`
 - transcript segments: `4`
 - extracted frames: `1`
+
+### 로컬 영상 파일 경로
+
+테스트용 말소리 포함 mp4 파일을 만든 뒤 로컬 입력 전체 경로를 실행했습니다.
+
+```bash
+uv run youtube-summarizer/scripts/prepare.py \
+  "/tmp/youtube-summarizer-local-e2e/local-sample.mp4" \
+  --output-root /tmp/youtube-summarizer-local-e2e/out \
+  --language en \
+  --min-frames 1 \
+  --max-frames 2
+```
+
+결과:
+- `manifest.json` 생성 성공
+- `source_type`: `local_file`
+- `files.video`가 원본 `source_path`를 가리킴
+- transcript source: `stt:elevenlabs-scribe-v2`
+- transcript segments: `1`
+- extracted frames: `1`
+- width/height metadata: `320x180`
 
 ## 주의할 점
 

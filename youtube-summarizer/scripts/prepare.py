@@ -12,7 +12,7 @@
 #   "yt-dlp>=2025.1.1",
 # ]
 # ///
-"""Prepare a YouTube video work folder and write a compact manifest."""
+"""Prepare a YouTube or local video work folder and write a compact manifest."""
 
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from download import download_video
+from local_video import create_local_video_manifest
 from scene_detect import create_frames_manifest
 from transcribe import transcript_from_download_manifest
 
@@ -58,7 +59,7 @@ def existing_prompt_files(skill_dir: Path) -> dict[str, str]:
 
 def create_final_manifest(
     skill_dir: Path,
-    url: str,
+    source: str,
     download_manifest_path: Path,
     transcript_json: Path,
     frames_manifest_path: Path,
@@ -67,10 +68,14 @@ def create_final_manifest(
     transcript = read_json(transcript_json)
     frames_manifest = read_json(frames_manifest_path)
     work_dir = Path(str(download_manifest["work_dir"]))
+    source_type = str(download_manifest.get("source_type") or "youtube")
     final_manifest = {
         "schema_version": 1,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "url": url,
+        "source": source,
+        "source_type": source_type,
+        "url": download_manifest.get("url") or (source if source_type == "youtube" else None),
+        "source_path": download_manifest.get("source_path"),
         "work_dir": str(work_dir),
         "metadata": download_manifest.get("metadata") or {},
         "files": {
@@ -109,13 +114,25 @@ def create_final_manifest(
 
 def prepare_video(args: argparse.Namespace, skill_dir: Path) -> Path:
     languages = [item.strip() for item in args.languages.split(",") if item.strip()]
-    download_result = download_video(
-        url=args.url,
-        output_root=Path(args.output_root),
-        languages=languages or ["ko", "en"],
-        max_height=args.max_height,
-        max_comments=args.max_comments,
-    )
+    source = str(args.source)
+    source_path = Path(source).expanduser()
+    if source_path.exists():
+        download_result = create_local_video_manifest(
+            source=source_path,
+            output_root=Path(args.output_root),
+        )
+    elif source.startswith(("http://", "https://")):
+        download_result = download_video(
+            url=source,
+            output_root=Path(args.output_root),
+            languages=languages or ["ko", "en"],
+            max_height=args.max_height,
+            max_comments=args.max_comments,
+        )
+    else:
+        raise FileNotFoundError(
+            f"Input is neither an existing local file nor an HTTP(S) URL: {source}"
+        )
     if download_result.video_path is None:
         raise RuntimeError("Video download did not produce a video file.")
     transcript_result = transcript_from_download_manifest(
@@ -144,7 +161,7 @@ def prepare_video(args: argparse.Namespace, skill_dir: Path) -> Path:
     )
     return create_final_manifest(
         skill_dir=skill_dir,
-        url=args.url,
+        source=source,
         download_manifest_path=download_result.manifest_path,
         transcript_json=transcript_result.transcript_json,
         frames_manifest_path=frames_manifest,
@@ -152,8 +169,8 @@ def prepare_video(args: argparse.Namespace, skill_dir: Path) -> Path:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Prepare YouTube summarization assets.")
-    parser.add_argument("url", help="YouTube URL")
+    parser = argparse.ArgumentParser(description="Prepare YouTube or local video summarization assets.")
+    parser.add_argument("source", help="YouTube URL or local video file path")
     parser.add_argument("--output-root", default="downloads", help="Output root directory")
     parser.add_argument("--languages", default="ko,en", help="Subtitle language preference")
     parser.add_argument("--language", default="ko", help="STT language code or auto")
