@@ -76,7 +76,7 @@ class ExtractedFrame:
 
 
 def read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_bytes().decode("utf-8", errors="replace"))
 
 
 def write_json(path: Path, data: dict[str, Any]) -> None:
@@ -84,7 +84,14 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
 
 
 def run_command(command: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(command, capture_output=True, text=True, check=False)
+    return subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
 
 
 def require_ffmpeg() -> None:

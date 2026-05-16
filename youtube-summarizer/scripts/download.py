@@ -44,7 +44,7 @@ def sanitize_filename(value: str, fallback: str = "youtube-video") -> str:
 
 
 def read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_bytes().decode("utf-8", errors="replace"))
 
 
 def write_json(path: Path, data: dict[str, Any]) -> None:
@@ -52,7 +52,14 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
 
 
 def run_command(command: list[str]) -> None:
-    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    result = subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
     if result.returncode != 0:
         detail = result.stderr.strip() or result.stdout.strip()
         raise RuntimeError(f"Command failed: {' '.join(command)}\n{detail}")
